@@ -1,0 +1,108 @@
+Installation of Crossplane
+
+* Create EKS Cluster on AWS
+* Launched EC2 Linux Instance t3.xlarge type
+* Configure aws cli
+* Install kubectl 1.22  (AWS Documentation)
+
+*Instal helm 3.8.2
+
+https://devopscube.com/install-configure-helm-kubernetes/
+
+wget -O helm.tar.gz https://get.helm.sh/helm-v3.8.2-linux-amd64.tar.gz
+
+* Install kind
+
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.15.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+* Install git
+Follow Link: https://medium.com/nerd-for-tech/introduction-to-crossplane-2f873ae0f9f3
+
+###Clone the repo
+git clone https://github.com/pavan-kumar-99/medium-manifests.git -b crossplane
+cd medium-manifests/crossplane-aws
+#Create the namespace and install the components using helm
+kubectl create namespace crossplane-system
+
+helm repo add crossplane-stable https://charts.crossplane.io/stable
+helm repo update
+
+helm install crossplane --namespace crossplane-system crossplane-stable/crossplane
+#Check the components are up and healthy
+kubectl get all -n crossplane-system
+
+###Create a Kubernetes secret with the configuration file generated.
+
+kubectl create secret generic aws-secret-creds -n crossplane-system --from-file=creds=./creds.conf
+
+###Once the secret is created let us now create the Provider config for our AWS account.
+
+kubectl apply -f provider-config.yaml
+
+[root@ip-172-31-46-49 crossplane-aws]# cat provider-config.yaml
+apiVersion: aws.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: awsconfig
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: aws-secret-creds
+      key: creds
+
+cat aws-provider.yaml
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: aws-provider
+spec:
+  package: crossplane/provider-aws:alpha
+
+$ kubectl apply -f aws-provider.yaml
+
+has context menu
+
+###Generate the configuration files with the AWS Credentials.
+
+AWS_PROFILE=default && echo -e "[default]\naws_access_key_id = $(aws configure get aws_access_key_id --profile $AWS_PROFILE)\naws_secret_access_key = $(aws configure get aws_secret_access_key --profile $AWS_PROFILE)" > creds.conf
+
+###Create a Kubernetes secret with the configuration file generated.
+
+kubectl create secret generic aws-secret-creds -n crossplane-system --from-file=creds=./creds.conf
+
+[root@ip-172-31-46-49 crossplane-aws]# cat provider-config.yaml
+apiVersion: aws.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: awsconfig
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: aws-secret-creds
+      key: creds
+
+kubectl apply -f provider-config.yaml
+
+has context menu
+
+cat ec2.yaml
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: sample-instance3
+spec:
+  forProvider:
+    region: us-east-2
+    imageId: ami-0568773882d492fc8
+    instanceType: t2.micro
+  providerConfigRef:
+     name: awsconfig
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
