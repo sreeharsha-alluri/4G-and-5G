@@ -1,0 +1,181 @@
+5G Components Deployment Latest
+
+EC2 machine with t2.large or t2.xlarge and install minikube
+
+
+curl https://get.docker.com | sudo bash
+
+sudo apt install -y curl wget apt-transport-https
+
+wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+
+sudo cp minikube-linux-amd64 /usr/local/bin/minikube
+
+sudo chmod +x /usr/local/bin/minikube
+
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-
+release/release/stable.txt`/bin/linux/amd64/kubectl
+
+sudo chmod +x kubectl
+
+sudo mv kubectl /usr/local/bin/
+
+sudo usermod -aG docker $(whoami)
+
+sudo reboot
+
+minikube start
+
+git clone https://github.com/sreeharsha-alluri/5g-components.git
+
+cd 5g-components/
+
+ls
+
+docker build --target oai-amf --tag oai-amf:v1.4.0 \
+               --file component/oai-amf/docker/Dockerfile.amf.ubuntu18 \
+               --build-arg BASE_IMAGE=ubuntu:focal \
+               component/oai-amf
+
+
+docker build --target oai-smf --tag oai-smf:v1.4.0 \
+               --file component/oai-smf/docker/Dockerfile.smf.ubuntu18 \
+               --build-arg BASE_IMAGE=ubuntu:22.04 \
+               component/oai-smf
+
+docker build --target oai-nrf --tag oai-nrf:v1.4.0 \
+               --file component/oai-nrf/docker/Dockerfile.nrf.ubuntu18 \
+               --build-arg BASE_IMAGE=ubuntu:jammy \
+               component/oai-nrf
+
+docker build --target oai-spgwu-tiny --tag oai-spgwu-tiny:v1.4.0 \
+               --file component/oai-upf-equivalent/docker/Dockerfile.ubuntu18.04 \
+               --build-arg BASE_IMAGE=ubuntu:20.04 \
+               component/oai-upf-equivalent
+
+docker build --target oai-ausf --tag oai-ausf:v1.4.0 \
+               --file component/oai-ausf/docker/Dockerfile.ausf.ubuntu18 \
+               component/oai-ausf
+
+docker build --target oai-udm --tag oai-udm:v1.4.0 \
+               --file component/oai-udm/docker/Dockerfile.udm.ubuntu18 \
+               component/oai-udm
+
+docker build --target oai-udr --tag oai-udr:v1.4.0 \
+               --file component/oai-udr/docker/Dockerfile.udr.ubuntu18 \
+               component/oai-udr
+
+/*
+docker build --target oai-upf-vpp --tag oai-upf-vpp:v1.4.0 \
+               --file component/oai-upf-vpp/docker/Dockerfile.upf-vpp.ubuntu \
+               component/oai-upf-vpp
+
+docker build --target oai-nssf --tag oai-nssf:v1.4.0 \
+               --file component/oai-nssf/docker/Dockerfile.nssf.ubuntu \
+               component/oai-nssf
+
+docker build --target trf-gen-cn5g --tag trf-gen-cn5g:latest \
+               --file ci-scripts/Dockerfile.traffic.generator.ubuntu18.04 \
+               .
+*/
+
+cd 
+
+AWS CLI Installation
+
+sudo apt install unzip -y
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+unzip awscliv2.zip
+
+sudo ./aws/install
+
+aws --version
+
+aws configure
+
+Access key ID     : AKIAZYQWCKRC6AEOR674          
+
+Secret access key : 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
+
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 671134929989.dkr.ecr.us-east-1.amazonaws.com
+
+docker tag oai-udr:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-amf:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-udr:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-amf:v1
+
+docker tag oai-udm:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-udm:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-udm:v1
+
+docker tag oai-ausf:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-ausf:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-ausf:v1 
+
+docker tag oai-spgwu-tiny:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-spgwu-tiny:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-spgwu-tiny:v1
+
+docker tag oai-nrf:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-nrf:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-nrf:v1
+
+docker tag oai-smf:v1.4.0 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-smf:v1
+
+docker push 671134929989.dkr.ecr.us-east-1.amazonaws.com/oai-smf:v1
+
+
+Goto this path 5g-components/charts/oai-5g-core/oai-amf
+
+vi values.yaml
+
+Change the version to v1 in each and every 5g component
+
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+
+chmod 700 get_helm.sh
+
+./get_helm.sh
+
+helm install nrf 5g-components/charts/oai-5g-core/oai-nrf/
+
+helm install udr 5g-components/charts/oai-5g-core/oai-udr/
+
+helm install udm 5g-components/charts/oai-5g-core/oai-udm/
+
+helm install ausf 5g-components/charts/oai-5g-core/oai-ausf/
+
+helm install amf 5g-components/charts/oai-5g-core/oai-amf/
+
+helm install spgwu-tiny 5g-components/charts/oai-5g-core/oai-spgwu-tiny/
+
+helm install smf 5g-components/charts/oai-5g-core/oai-smf/
+
+
+Goto oai-udr
+
+Open the values.yaml file
+
+Copy the mysql end point form the rds prod-db endpoint
+
+username : test
+
+password : test1234
+
+kubectl get pods
+
+Incase if the images are in the imagepullback error then enter cd then paste the below command
+
+kubectl create secret generic regcred \
+    --from-file=.dockerconfigjson=.docker/config.json \
+    --type=kubernetes.io/dockerconfigjson
+
+In case if the pods are not running give the command as helm ls it list all the helm charts
+
+helm un  and remove all the helm instllations
+
+
+kubectl logs oai-udr-55d4666686-88ljh -c udr
