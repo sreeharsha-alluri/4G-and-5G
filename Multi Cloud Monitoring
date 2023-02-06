@@ -1,0 +1,117 @@
+Cloud Monitoring working on AWS and Azure
+
+https://www.youtube.com/watch?v=KcSm61Mm7b0
+
+Launch 3 instances
+
+NodeExporter	Prometheus 	Graphana
+
+Connect to the NodeExporter instance
+
+sudo su -
+
+cd /opt
+
+sudo wget https://github.com/prometheus/node_exporter/releases/download/v1.4.0/node_exporter-1.4.0.linux-amd64.tar.gz
+
+ls
+
+sudo tar -xvf node_exporter-1.4.0.linux-amd64.tar.gz
+
+cd node_exporter-1.4.0.linux-amd64/
+
+ls
+
+sudo ./node_exporter
+
+Connect to the Prometheus instance
+
+sudo su -
+
+cd /opt
+
+sudo wget https://github.com/prometheus/prometheus/releases/download/v2.39.1/prometheus-2.39.1.linux-amd64.tar.gz
+
+sudo tar -xvf  prometheus-2.39.1.linux-amd64.tar.gz
+
+cd prometheus-2.39.1.linux-amd64/
+
+ls
+
+sudo vi prometheus.yml                   add private ip address and port number of prometheus server , private ip : 9100
+
+sudo ./prometheus                        public ip : 9090 to open prometheus dashboard
+
+Connect to the Graphana instance
+
+sudo su -
+
+cd /opt
+
+sudo nano /etc/yum.repos.d/grafana.repo   if this command does not work follow the below three commands
+       
+     sudo su -
+     
+     vi /etc/yum.repos.d/grafana.repo
+
+[grafana]
+name=grafana
+baseurl=https://packages.grafana.com/oss/rpm
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+
+sudo yum install grafana
+
+sudo service grafana-server start
+
+sudo service grafana-server status                             public ip : 3000 to open grafana
+
+
+Inside grafana click on add source
+                            
+http://private ip of prometheus:9090
+
+Add another data source such as CloudWatch in the case of aws and specify the access key and secret access key
+
+Access key ID     : AKIAZYQWCKRC6AEOR674          
+
+Secret access key : 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
+
+
+In case if there are no dashboards appearing then goto IAM in AWS and create a role with CloudWatchFullAccess
+
+
+
+The ID's below are currently not in use , these are just for the reference
+
+To add azure click on Add a new source --> Azure Monitor
+
+Tenant ID : b5098610-586b-40c0-bdf2-e327dc809673
+
+Application (client) ID : 695f9a8a-620e-4b7b-8634-50643157dba9
+
+Subscription ID : 87f361bd-2a89-4c4a-8d4b-7332e6010f58
+
+Client Secret : Nnt8Q~~Z5cbwZG4aiGtP1dlpNgDfm4ySxw0fpb07
+
+
+The key below is currently not in use , these are just for the reference
+
+Google Cloud JWT Key
+
+{
+  "type": "service_account",
+  "project_id": "minikube-364705",
+  "private_key_id": "b1333029b20305d9e05c0773d60c7dfffcd38042",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC+mBOKrtvc70s2\nOf8uTNYNaV3ub2xkfJt801ZnnJffxosIHTax98TV+Nmvcuzch4ZKJlax5XYChBVA\n3NueuYpRZ/JONCWuVHmOpUQ/G6E4V9qzvr2CUEqFdFfcwBna4Ilt1fvyiGSBFah3\nAGrFmeIF9R12go5zIwXxhX1WjmwAQOtfywc8nu8xAummzhpBrPwtcjArEL6UVxlU\nKMY75b5K1x0UPFM7hSjldewvLuc1MFhGss2KA2gpVJPOVo6nlGoHwtvrkD0qYtvD\n2O3PjuLx2z0QPrG1MoRwP52fou0SsrGVqHOS2fV2VrZPLLQqs8ryxGvep1jabf1m\nSP0O/7zZAgMBAAECggEAFKA35SyShfCuOVpsv4xN0eUS5uh6A3nqCHKFNEX3DZ7a\nkZs6aGdsOXe/ycPsgYUicZ3VM1VQwGmeNIcc4VV/ntsFQZSqde5AZWvZ3IvXQQCz\nnftzXh869qxQ4dvhhcACP2Jb7LL5UBrm61Hz5sSGIvzpc6zMplsmRoKaviZAO9qa\n5FZVlD17pMa/4OF+rxs+ll/BYOt13CruF4wG2D/oUu9iiba80Pi3pUTr/Ok6jazP\nAtyXY8CUdlCUISkAHO4tL1lYxxINMRADRoNzuN0GkiulayOofOoSS8pGrq2MxXTX\nBH1IAqSovfi2+RTpLU7VDbOqhHyNOAzgwbi+qSaszQKBgQDdq0NPGuZWrXsRoyS9\n5tH15NmU7/Ll692b1fztjV2XWMc77xM4CtV93nb2poaBfoYTNkQ3D4VrOhQnumNW\n9cTDCS5CzN8vP0N5t4jfi+Qqn6V1weq6G+YUmEnTlds8Yp/yjQp3/4Vbfsx8NXKB\ntRkEgwUfuxazXe40pXixkyRIXwKBgQDcHMDTN/Qb7W6gKgR0/H4yzYjp8UV5kolE\nOnz/pIfFPcCb71ILEOpDvCyGtAMyROdXpB/RmixCr8IuSsxYVto/hryiok0iEUrB\n4t+DmUtHxNQ0JB4mhrB2IRGNs1XdjdUy2gTx0go7LpSyVE1cQwv4EoXvHaSU6Kxe\nbksvg4JlxwKBgEn2OfgsBo0HR1gEMl82o/nCySKbyVUUFRZJGSJ+F6tHEPsbczMw\n0jk0QEdeGuUcPUotwicJA8BaWZ1D4J+EU4msB4Z8az+NgUschQvp1lCugfu/nz1H\nz8YxZfi2OLd2RN4eV07gsDNuJHaRMsq6jUVnHg+PUiy4+6EPUS0W5nVLAoGAYp8v\ndnP3mBvGGVU6MgB/utuEoO1Np68UedGK+DAL9UA58KRGKlcl37uMZ754QCnHTeln\nqE5fznFZm8w/ysT/fL8t/eCilsUQrdatNxWUOU/jlIkqSTDIF+WxK8BSlLZb9DDj\nTkZB90pjrZNAJjqUPk5uXDj36RBnStg4L83IuzkCgYBUS/uzaYdyqnDb/XzHM8VC\nT6L6T5+QHnCbYfQpXemd+zIqbnu3L3xUEyzKcxY5aWbmw0krbvIm/8WeLXdOeXQH\n8VF4XESp1UbVEiE591T35W8LukJSSLjjOBC3Ql4v9tST9yb3NvLodEwtNBW3A048\n8X/hoAUh4IvasmwfZhLaOA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "multi-cloud@minikube-364705.iam.gserviceaccount.com",
+  "client_id": "115195858745458408489",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/multi-cloud%40minikube-364705.iam.gserviceaccount.com"
+}
