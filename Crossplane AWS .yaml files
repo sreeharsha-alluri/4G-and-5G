@@ -1,0 +1,478 @@
+aws-rds-conn.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mysql-rds-connection-test
+  namespace: crossplane-system
+spec:
+  containers:
+  - name: mysqlconn
+    image: mysql:latest
+    command: ['mysql']
+    args: ['-c', 'show databases;'] 
+    env:
+    - name: MYSQL_HOST
+      valueFrom:
+        secretKeyRef:
+          name: production-rds-conn-string
+          key: endpoint
+    - name: MYSQL_PWD
+      valueFrom:
+        secretKeyRef:
+          name: production-rds-conn-string
+          key: password
+    - name: USER
+      valueFrom:
+        secretKeyRef:
+          name: production-rds-conn-string
+          key: username
+    - name: MYSQL_TCP_PORT
+      valueFrom:
+        secretKeyRef:
+          name: production-rds-conn-string
+          key: port
+
+db-secret.yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: production-rds-conn-string
+  namespace: crossplane-system
+data:
+  password: dGVzdFBhc3N3b3JkITEyMw== # testPassword!1231
+
+
+ebs.yaml
+
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Volume
+metadata:
+  name: pod-ebs
+  namespace: crossplane-system
+spec:
+  forProvider:
+    region: us-east-1
+    availabilityZone: us-east-1b
+    encrypted: true
+    volumeType: gp3
+    size: 2 
+  providerConfigRef:
+    name: awsconfig
+
+
+ec2_with_volume.yaml
+
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: sample-instance-gopi-2
+spec:
+  forProvider:
+    region: us-east-1
+    imageId: ami-061dbd1209944525c
+    instanceType: t2.large
+    blockDeviceMappings:
+      - deviceName: /dev/sda1
+        ebs:
+          volumeSize: 40
+  providerConfigRef:
+    name: awsconfig
+
+mysqldb.yaml
+
+apiVersion: database.aws.crossplane.io/v1beta1
+kind: RDSInstance
+metadata:
+  name: production-mysql
+  namespace: crossplane-system
+spec:
+  forProvider:
+    allocatedStorage: 50
+    autoMinorVersionUpgrade: true
+    applyModificationsImmediately: false
+    backupRetentionPeriod: 0
+    caCertificateIdentifier: rds-ca-2019
+    copyTagsToSnapshot: false
+    dbInstanceClass: db.t2.small
+    dbSubnetGroupName: prod-subnet-group
+    vpcSecurityGroupIDRefs:
+      - name: rds-access-sg
+    deletionProtection: false
+    enableIAMDatabaseAuthentication: false
+    enablePerformanceInsights: false
+    engine: mysql
+    region: us-east-1
+    engineVersion: 8.0.28
+    finalDBSnapshotIdentifier: muvaf-test
+    licenseModel: general-public-license
+    masterUsername: admin
+    multiAZ: true
+    port: 3306
+    tags:
+    - key: Name
+      value: production-rds
+    - key: Environment
+      value: Production
+    - key: Owner
+      value: tcs
+    publiclyAccessible: true
+    storageEncrypted: false
+    storageType: gp2
+  providerConfigRef:
+    name: awsconfig
+  writeConnectionSecretToRef:
+    name: production-rds-conn-string
+    namespace: crossplane-system
+
+---
+
+apiVersion: database.aws.crossplane.io/v1beta1
+kind: DBSubnetGroup
+metadata:
+  name: prod-subnet-group
+spec:
+  forProvider:
+    region: us-east-1
+    description: "Prod Subnet group"
+    subnetIdRefs:
+      - name: prod-subnet-1
+      - name: prod-subnet-2
+  providerConfigRef:
+    name: awsconfig
+
+
+
+
+rds.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-env-pod
+spec:
+  containers:
+  - name: mycontainer
+    image: redis
+    env:
+      - name: SECRET_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: mysecret
+            key: username
+            optional: false # same as default; "mysecret" must exist
+                            # and include a key named "username"
+      - name: SECRET_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mysecret
+            key: password
+            optional: false # same as default; "mysecret" must exist
+                            # and include a key named "password"
+  restartPolicy: Never
+
+vpc.yaml
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: VPC
+metadata:
+  name: production-vpc
+spec:
+  forProvider:
+    region: us-east-1
+    cidrBlock: 192.168.0.0/16
+    enableDnsSupport: true
+    enableDnsHostNames: true
+    tags:
+    - key: Environment
+      value: Production
+    - key: Owner
+      value: tcs
+    - key: Name
+      value: production-vpc
+    instanceTenancy: default
+  providerConfigRef:
+    name: awsconfig
+
+---
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: prod-subnet-1
+spec:
+  forProvider:
+    region: us-east-1
+    availabilityZone: us-east-1a
+    cidrBlock: 192.168.1.0/24
+    vpcIdRef:
+       name: production-vpc
+    tags:
+    - key: Environment
+      value: Production
+    - key: Name
+      value: prod-subnet-1
+    - key: Owner
+      value: tcs
+    mapPublicIPOnLaunch: true
+  providerConfigRef:
+    name: awsconfig
+
+---
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: prod-subnet-2
+spec:
+  forProvider:
+    region: us-east-1
+    availabilityZone: us-east-1b
+    cidrBlock: 192.168.2.0/24
+    vpcIdRef:
+      name: production-vpc
+    tags:
+    - key: Environment
+      value: Production
+    - key: Name
+      value: prod-subnet-2
+    - key: Owner
+      value: tcs
+    mapPublicIPOnLaunch: true
+  providerConfigRef:
+    name: awsconfig
+
+---
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: InternetGateway
+metadata:
+  name: production-internetgateway
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: production-vpc
+  providerConfigRef:
+    name: awsconfig
+
+---
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: RouteTable
+metadata:
+  name: production-routetable
+spec:
+  forProvider:
+    region: us-east-1
+    routes:
+      - destinationCidrBlock: 0.0.0.0/0
+        gatewayIdRef:
+          name: production-internetgateway
+    associations:
+      - subnetIdRef:
+          name: prod-subnet-2
+      - subnetIdRef:
+          name: prod-subnet-1
+    vpcIdRef:
+      name: production-vpc
+  providerConfigRef:
+    name: awsconfig
+
+---
+
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: SecurityGroup
+metadata:
+  name: rds-access-sg
+spec:
+  forProvider:
+    region: us-east-1
+    vpcIdRef:
+      name: production-vpc
+    groupName: mysql-sg
+    description: RDS communication to local application Pods
+    tags:
+    - key: Environmenti
+      value: Production
+    - key: Owner
+      value: tcs
+    - key: Name
+      value: rds-access-sg
+    ingress:
+      - fromPort: 3306
+        toPort: 3306
+        ipProtocol: tcp
+        ipRanges:
+          - cidrIp: 0.0.0.0/0
+  providerConfigRef:
+    name: awsconfig
+
+
+aws_provider.yaml
+
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: aws-provider
+spec:
+  package: crossplane/provider-aws:alpha
+
+
+
+ebs-pod.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-deployment
+  namespace: crossplane-system
+spec:
+  containers:
+  - image: nginx
+    name: test-container
+    volumeMounts:
+    - mountPath: /test-ebs
+      name: test-ebs
+  volumes:
+  - name: test-ebs
+    awsElasticBlockStore:
+      volumeID: "vol-0e5f790476b1cd445"
+      fsType: ext4
+
+ec2.yaml
+
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: sample-instance-4
+spec:
+  forProvider:
+    region: us-east-1
+    imageId: ami-0574da719dca65348
+    instanceType: t2.xlarge
+  providerConfigRef:
+    name: awsconfig
+
+pod-ebs.yaml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: slow
+  namespace: crossplane-system
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: io1
+  iopsPerGB: "10"
+  fsType: ext4
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: test2
+  namespace: crossplane-system
+  labels:
+    type: amazonEBS
+spec:
+  capacity:
+    storage: 1Gi
+accessModes:
+  - ReadWriteOnce
+awsElasticBlockStore:
+  volumeID: "vol-0e5f790476b1cd445"
+  fsType: ext4
+
+
+provider-config.yaml
+
+apiVersion: aws.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: awsconfig
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: aws-secret-creds
+      key: creds
+
+rdsmysql.yaml
+
+apiVersion: rds.aws.crossplane.io/v1alpha1
+kind: DBInstance
+metadata:
+  name: prod-dbinstance
+  namespace: crossplane-system
+spec:
+  forProvider:
+    region: us-east-1
+    allocatedStorage: 20
+    autoMinorVersionUpgrade: true
+    autogeneratePassword: true
+    backupRetentionPeriod: 14
+    dbInstanceClass: db.t2.micro
+    dbName: prodMysql
+    engine: mysql
+    engineVersion: "8.0.28"
+    masterUsername: admin
+    masterUserPasswordSecretRef:
+      key: password
+      name: test-dbinstance
+      namespace: crossplane-system
+    preferredBackupWindow: "7:00-8:00"
+    preferredMaintenanceWindow: "Sat:8:00-Sat:11:00"
+    publiclyAccessible: true
+    skipFinalSnapshot: true
+    storageEncrypted: false
+    storageType: gp2
+    #dbParameterGroupName: test-dbparametergroup
+    applyImmediately: true
+  writeConnectionSecretToRef:
+    name: prod-dbinstance-out
+    namespace: default
+  providerConfigRef:
+    name: awsconfig
+
+
+
+---
+
+
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prod-dbinstance
+  namespace: crossplane-system
+type: Opaque
+data:
+  password: dGVzdFBhc3N3b3JkITEyMw== # testPassword!123
+
+
+
+bucket.yaml
+
+
+apiVersion: s3.aws.crossplane.io/v1beta1
+kind: Bucket
+metadata:
+  name: crossplane-con01
+  namespace: crossplane-system
+spec:
+  forProvider:
+    acl: private
+    locationConstraint: us-west-1
+    versioningConfiguration:
+      status: Enabled
+  providerConfigRef:
+    name: awsconfig 
+  providerRef:
+    name: awsconfig
+
+
+
