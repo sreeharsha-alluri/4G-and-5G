@@ -34,3 +34,6 @@ pip install scoutsuite
  scout -h aws --region us-east-1
 
  scout aws
+ 
+Install a tool called WinSCP to tranfer the file generated in the linux machine into windows machine.
+The public ip v4 address along with the private key ie., .ppk file is required to establish the connection between EC2 linux machine and the windows machine.
