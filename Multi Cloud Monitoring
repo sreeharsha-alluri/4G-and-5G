@@ -81,6 +81,14 @@ Access key ID     : AKIAZYQWCKRC6AEOR674
 
 Secret access key : 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
 
+Grafana dashboard ID's for reference
+
+315 
+13838
+6417
+8588
+
+
 
 In case if there are no dashboards appearing then goto IAM in AWS and create a role with CloudWatchFullAccess
 
