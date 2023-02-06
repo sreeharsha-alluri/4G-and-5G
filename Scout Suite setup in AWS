@@ -1,0 +1,36 @@
+Scoutsuite Installation on AWS
+
+
+sudo curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+sudo apt install unzip
+
+sudo unzip awscliv2.zip
+
+sudo ./aws/install
+
+aws --version
+
+aws configure
+
+Access key ID     : AKIAZYQWCKRC6AEOR674          
+
+Secret access key : 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
+
+sudo apt-get update
+
+sudo apt-get install python3-virtualenv
+
+git clone https://github.com/nccgroup/ScoutSuite.git
+
+cd ScoutSuite
+
+virtualenv -p python3 venv
+
+source venv/bin/activate
+
+pip install scoutsuite
+
+ scout -h aws --region us-east-1
+
+ scout aws
