@@ -473,6 +473,27 @@ spec:
     name: awsconfig 
   providerRef:
     name: awsconfig
+    
+    
+EC2 machine with additional root volume
+
+
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: test-tokyo-instance
+spec:
+  forProvider:
+    region: ap-northeast-1
+    imageId: ami-021117b0e6a499966
+    instanceType: c3.4xlarge
+    keyName: test
+    blockDeviceMappings:
+      - deviceName: /dev/sda1
+        ebs:
+          volumeSize: 100
+  providerConfigRef:
+    name: awsconfig
 
 
 
