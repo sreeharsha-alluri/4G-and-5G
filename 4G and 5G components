@@ -1,4 +1,4 @@
-4G Components Open5gs setup in AWS EC2 ubuntu machines
+5G NSA Components Open5gs setup in AWS EC2 ubuntu machines
 
 
 Installing Minikube
@@ -74,7 +74,7 @@ password : 1423
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-4G Components Deployment in Jenkins Pipeline
+5G NSA Components Deployment in Jenkins Pipeline
 
 Jenkins Dashboard --> Manage Jenkins --> Manage Nodes and Clouds
 
@@ -151,7 +151,7 @@ Then re-run the pipeline script again
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-5G Components setup in AWS EC2 ubuntu machines
+SA 5G Components setup in AWS EC2 ubuntu machines
 
 
 minikube start
